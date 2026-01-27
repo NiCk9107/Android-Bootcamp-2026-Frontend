@@ -158,7 +158,8 @@ Frontend
 Отображение только подтверждённых встреч.
 Поддержка адаптивной верстки .
 Pull-to-refresh и индикатор загрузки.
+  
 
-## Макет
 
+## Макет ui
 https://www.figma.com/design/qA7ZH9kk55reGOyOt36uo8/%D0%B7%D0%B0%D0%B4%D0%B0%D0%BD%D0%B8%D0%B5-3?node-id=0-1&t=EqD7TkbgdMFku7tc-1
