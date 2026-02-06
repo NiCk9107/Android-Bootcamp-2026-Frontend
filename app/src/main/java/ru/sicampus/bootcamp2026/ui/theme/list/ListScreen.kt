@@ -1,6 +1,6 @@
 package ru.sicampus.bootcamp2026.ui.theme.list
 
-/*import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,9 +37,22 @@ fun ListScreen(
     val state by viewModel.uiState.collectAsState()
 
     when (val currentState = state) {
-        is ListState.Error -> ListErrorState(currentState, onRefresh = { viewModel.getData() })
+        is ListState.Error -> ListErrorState(
+            currentState,
+            onRefresh = {
+                viewModel.onIntent(ListIntent.Refresh)
+            }
+        )
         is ListState.Loading -> ListLoadingState()
-        is ListState.Content -> ListContentState(currentState)
+        is ListState.Content -> ListContentState(
+            currentState,
+            onRefresh = {
+                viewModel.onIntent(ListIntent.Refresh)
+            },
+            onLoadMore = {
+                viewModel.onIntent(ListIntent.LoadMore)
+            }
+        )
     }
 }
 
@@ -80,28 +93,79 @@ private fun ListErrorState(
 @Composable
 private fun ListContentState(
     state: ListState.Content,
+    onRefresh: () -> Unit,
+    onLoadMore: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+    val lazyColumnListState = rememberLazyListState()
+    val isNeededLoadMore by remember {
+        derivedStateOf {
+            val lastVisibleItem = lazyColumnListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: Int.MIN_VALUE
+            val totalItems = lazyColumnListState.layoutInfo.totalItemsCount
+            lastVisibleItem >= totalItems - 5
+        }
+    }
+
+    LaunchedEffect(isNeededLoadMore, state.isLastPage) {
+        if (isNeededLoadMore && !state.isLastPage) onLoadMore.invoke()
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        state = lazyColumnListState
     ) {
-        state.users.forEach { user ->
-            Row(
-                modifier = Modifier.padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AsyncImage(
-                    modifier = Modifier.size(48.dp).clip(CircleShape),
-                    model = user.photoUrl,
-                    contentDescription = null,
-                )
-
-                Column {
-
-                    Text(user.name)
-                    Text(user.email)
-
-                }
+        items(state.users) { item ->
+            when (item) {
+                is ListState.Item.Error -> ItemError(onRefresh)
+                is ListState.Item.Loading -> ItemLoading()
+                is ListState.Item.User -> ItemUser(item.entity)
             }
         }
     }
-}*/
+}
+
+@Composable
+fun ItemError(
+    onRefresh: () -> Unit
+) {
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Button(
+            onClick = onRefresh
+        ) {
+            Text("Load failed. Click me for try again")
+        }
+    }
+}
+
+@Composable
+fun ItemLoading() {
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(24.dp)
+        )
+    }
+}
+
+@Composable
+fun ItemUser(
+    user: UserEntity
+) {
+    Row(
+        modifier = Modifier.padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AsyncImage(
+            modifier = Modifier.size(48.dp).clip(CircleShape),
+            model = user.photoUrl,
+            contentDescription = null,
+        )
+        Column {
+            Text(user.name)
+            Text(user.email)
+        }
+    }
+}

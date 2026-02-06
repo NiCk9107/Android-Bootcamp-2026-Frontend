@@ -2,10 +2,10 @@ package ru.sicampus.bootcamp2026.domain.entities
 
 import ru.sicampus.bootcamp2026.data.UserRepository
 
-class GetUserUseCase (
+class GetUsersUseCase(
     private val userRepository: UserRepository
-){
-    suspend operator fun invoke(): Result<List<UserEntity>>{
+) {
+    suspend operator fun invoke(): Result<List<UserEntity>> {
         return userRepository.getUsers()
     }
 }
